@@ -3,11 +3,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework import status, generics, mixins
 from rest_framework.decorators import api_view, APIView, permission_classes
-from .models import Note
-from .serializers import NoteSerializer
+from .models import Note, Tag
+from .serializers import NoteSerializer, TagSerializer
 from django.shortcuts import get_object_or_404
 from accounts.serializers import CurrentUserNotesSerializer
-from .permissions import ReadOnly, AuthorOrReadOnly, IsAuthor
+from .permissions import ReadOnly, AuthorOrReadOnly, IsAuthor, AuthorOrPublic
 
 # from rest_framework import viewsets
 
@@ -31,16 +31,16 @@ class NoteListCreateView(generics.GenericAPIView, mixins.ListModelMixin, mixins.
     permission_classes = [IsAuthenticated]
     queryset = Note.objects.all()
 
+    # modify the default queryset
+    def get_queryset(self):
+        user = self.request.user
+        return Note.objects.filter(author=user)
+
     # using mixin perform-hook to attach note to current user
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(author=user)
         return super().perform_create(serializer)
-
-    # overiding queryset so current user only sees own notes
-    def get_queryset(self):
-        user = self.request.user
-        return Note.objects.filter(author=user)
 
     def get(self, request: Request, *args, **kwargs):
 
@@ -53,7 +53,7 @@ class NoteListCreateView(generics.GenericAPIView, mixins.ListModelMixin, mixins.
 class NoteRetrieveUpdateDeleteView(generics.GenericAPIView, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
     serializer_class = NoteSerializer
     queryset = Note.objects.all()
-    permission_classes = [AuthorOrReadOnly]
+    permission_classes = [AuthorOrPublic]
 
     def get(self, request: Request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -75,3 +75,46 @@ def get_notes_for_current_user(request: Request):
         data=serializer.data,
         status=status.HTTP_200_OK
     )
+
+
+class ListNotesForAdmin(generics.GenericAPIView, mixins.ListModelMixin):
+    """Admin can see all notes"""
+    queryset = Note.objects.all()
+    serializer_class = NoteSerializer
+    permission_classes = [IsAdminUser]
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ListNotesByTagFilter(generics.GenericAPIView, mixins.ListModelMixin):
+    """Filter note by tag"""
+    queryset = Note.objects.all()
+    serializer_class = NoteSerializer
+    permission_classes = [IsAuthenticated]
+
+    # we can accept the tags as part of the request.
+    def get_queryset(self):
+        user = self.request.user
+        notes = user.notes.all()
+        # tag = self.request.data.get('tag') or None
+        tag = self.kwargs.get("tag")
+        return user.notes.filter(tags__name=tag)
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ListSearchNotesByKeyWord(generics.GenericAPIView, mixins.ListModelMixin):
+    """Search note by keyword"""
+    queryset = Note.objects.all()
+    serializer_class = NoteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        keyword = self.kwargs.get("keyword")
+        user = self.request.user
+        return user.notes.filter(body__icontains=keyword)
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
