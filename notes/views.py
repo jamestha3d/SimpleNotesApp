@@ -8,6 +8,7 @@ from .serializers import NoteSerializer, TagSerializer
 from django.shortcuts import get_object_or_404
 from accounts.serializers import CurrentUserNotesSerializer
 from .permissions import ReadOnly, AuthorOrReadOnly, IsAuthor, AuthorOrPublic
+from django.core.exceptions import ObjectDoesNotExist
 
 # from rest_framework import viewsets
 
@@ -118,3 +119,53 @@ class ListSearchNotesByKeyWord(generics.GenericAPIView, mixins.ListModelMixin):
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+@api_view(http_method_names=['POST'])
+@permission_classes([IsAuthenticated])
+def add_tag_to_note(request: Request, pk):
+    note = Note.objects.get(pk=pk)
+    user = request.user
+    tag_name = request.data.get('tag')
+    if note.author == user:
+        if tag_name is not None and tag_name is not "":
+            try:
+                tag = Tag.objects.get(name=tag_name)
+            except ObjectDoesNotExist:
+                tag = Tag.objects.create(name=tag_name)
+            note.tags.add(tag)
+            note.save()
+            serializer = NoteSerializer(note, many=False)
+            return Response(
+                data=serializer.data,
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(data={"message": "Invalid tag name"})
+
+    return Response(data={"message": "You do not have permission to modify this note"}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(http_method_names=['DELETE'])
+@permission_classes([IsAuthenticated])
+def remove_tag_from_note(request: Request, pk):
+    note = Note.objects.get(pk=pk)
+    user = request.user
+    tag_name = request.data.get('tag')
+    if note.author == user:
+        if tag_name is not None:
+            try:
+                tag = Tag.objects.get(name=tag_name)
+            except ObjectDoesNotExist:
+                return Response(data={"message": "This tag is not on note"})
+            note.tags.remove(tag)
+            note.save()
+            serializer = NoteSerializer(note, many=False)
+            return Response(
+                data=serializer.data,
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(data={"message": "Cannot delete invalid tag"})
+
+    return Response(data={"message": "You do not have permission to modify this note"}, status=status.HTTP_401_UNAUTHORIZED)
