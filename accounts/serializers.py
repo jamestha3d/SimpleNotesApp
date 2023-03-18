@@ -8,6 +8,7 @@ from rest_framework.authtoken.models import Token
 class SignUpSerializer(serializers.ModelSerializer):
     email = serializers.CharField(max_length=80)
     username = serializers.CharField(max_length=45)
+    # hide
     password = serializers.CharField(min_length=8, write_only=True)
 
     class Meta:
@@ -42,3 +43,15 @@ class CurrentUserNotesSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "username", "email", "notes"]
+
+
+class CurrentUserTagsSerializer(serializers.ModelSerializer):
+    # notes = serializers.StringRelatedField(many=True)
+    notes = serializers.HyperlinkedRelatedField(
+        many=True, view_name="note_detail", queryset=User.objects.all()
+    )
+    # url = serializers.HyperlinkedIdentityField(view_name="current_user")
+
+    class Meta:
+        model = User
+        fields = ["name", "tags"]

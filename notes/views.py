@@ -9,6 +9,8 @@ from django.shortcuts import get_object_or_404
 from accounts.serializers import CurrentUserNotesSerializer
 from .permissions import ReadOnly, AuthorOrReadOnly, IsAuthor, AuthorOrPublic
 from django.core.exceptions import ObjectDoesNotExist
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework.validators import ValidationError
 
 # from rest_framework import viewsets
 
@@ -43,10 +45,18 @@ class NoteListCreateView(generics.GenericAPIView, mixins.ListModelMixin, mixins.
         serializer.save(author=user)
         return super().perform_create(serializer)
 
+    @swagger_auto_schema(
+        operation_summary="List user notes",
+        operation_description="This returns all notes for the current user"
+    )
     def get(self, request: Request, *args, **kwargs):
 
         return self.list(request, *args, **kwargs)
 
+    @swagger_auto_schema(
+        operation_summary="Create note",
+        operation_description="Create a note"
+    )
     def post(self, request: Request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -56,12 +66,24 @@ class NoteRetrieveUpdateDeleteView(generics.GenericAPIView, mixins.RetrieveModel
     queryset = Note.objects.all()
     permission_classes = [AuthorOrPublic]
 
+    @swagger_auto_schema(
+        operation_summary="Retrieves a note by id",
+        operation_description="This retrieves a note by an id"
+    )
     def get(self, request: Request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
+    @swagger_auto_schema(
+        operation_summary="Update note by id",
+        operation_description="This updates a note by an id"
+    )
     def put(self, request: Request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
+    @swagger_auto_schema(
+        operation_summary="Delete note by id",
+        operation_description="This deletes a note by an id"
+    )
     def delete(self, request: Request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
@@ -84,6 +106,10 @@ class ListNotesForAdmin(generics.GenericAPIView, mixins.ListModelMixin):
     serializer_class = NoteSerializer
     permission_classes = [IsAdminUser]
 
+    @swagger_auto_schema(
+        operation_summary="List all notes for admin",
+        operation_description="This lists all public and private notes. Must have admin privilege"
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -102,6 +128,10 @@ class ListNotesByTagFilter(generics.GenericAPIView, mixins.ListModelMixin):
         tag = self.kwargs.get("tag")
         return user.notes.filter(tags__name=tag)
 
+    @swagger_auto_schema(
+        operation_summary="Filter note by tag name",
+        operation_description="This filters notes by a given tag for current user "
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -117,6 +147,10 @@ class ListSearchNotesByKeyWord(generics.GenericAPIView, mixins.ListModelMixin):
         user = self.request.user
         return user.notes.filter(body__icontains=keyword)
 
+    @swagger_auto_schema(
+        operation_summary="Search note by keyword",
+        operation_description="This returns notes that contain a given keyword for current user "
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -141,7 +175,7 @@ def add_tag_to_note(request: Request, pk):
                 status=status.HTTP_200_OK
             )
         else:
-            return Response(data={"message": "Invalid tag name"})
+            return Response(data={"message": "Please provide tag name"})
 
     return Response(data={"message": "You do not have permission to modify this note"}, status=status.HTTP_401_UNAUTHORIZED)
 

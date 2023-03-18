@@ -61,4 +61,65 @@ def get_queryset(self):
 author__username is username field lookup on Myobject model.
 
     
+***********************
+def delete(self, request: Request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
+
+***********************
+
+def perform_destroy(self, serializer):
+        # get note id from request
+        note_id = self.request.data.get('note_id')
+        tag_name = self.request.data.get('name')
+        note = Note.objects.get(pk=note_id)
+        # use serializer to save note
+        tag = Tag.objects.get(name=tag)
+        note.tags.remove(tag)
+        note.save()
+        return super().perform_create(serializer)
+
+    def get(self, request: Request, *args, **kwargs):
+
+        return self.list(request, *args, **kwargs)
+
+
+        
+************************
+class TagCreateView(generics.GenericAPIView, mixins.CreateModelMixin):
+    
+    #View for creating and listing Notes
+    
+    serializer_class = TagSerializer
+    permission_classes = [IsAuthor]
+    queryset = Tag.objects.all()
+
+    def get_queryset(self, note_id):
+        note = Note.objects.get(pk=note_id)
+        return note.tags.all()
+
+    # using mixin perform-hook to attach tag to current note
+    def perform_create(self, serializer):
+        # get note id from request
+        user = self.request.user
+        note_id = self.request.data.get('note_id')
+        note = Note.objects.get(pk=note_id)
+
+        if user == note.author:
+            # use serializer to save note
+            try:
+                tag = serializer.save()
+            except ValidationError:
+                return Response("this tag don dey")
+            note.tags.add(tag)
+            note.save()
+            return super().perform_create(serializer)
+        else:
+            return Response(data={"message": "You do not have permission to modify this note"})
+
+    def post(self, request: Request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+    ______________________
+    path("tags/", views.TagCreateView.as_view(), name="tags")
 """
