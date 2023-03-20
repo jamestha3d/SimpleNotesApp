@@ -122,4 +122,69 @@ class TagCreateView(generics.GenericAPIView, mixins.CreateModelMixin):
 
     ______________________
     path("tags/", views.TagCreateView.as_view(), name="tags")
+
+
+    ______________________
+
+
+    if tag_name is not None and tag_name is not "":
+            try:
+                tag = Tag.objects.get(name=tag_name)
+            except ObjectDoesNotExist:
+                tag = Tag.objects.create(name=tag_name)
+            note.tags.add(tag)
+            note.save()
+            serializer = NoteSerializer(note, many=False)
+            return Response(
+                data=serializer.data,
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(data={"message": "Please provide tag name"})
+
+class TagSerializer(serializers.ModelSerializer):
+    # replace related string field with id
+
+    class Meta:
+        model = Tag
+        fields = '__all__'
+
+    def validate(self, attrs):
+        invalid_tag = Tag.objects.filter(name=attrs['name']).exists()
+        if invalid_tag:
+            raise ValidationError("Invalid Tag")
+        return super().validate(attrs)
+
+    def create(self, validated_data):
+        tag = super().create(validated_data)
+        return tag
+            
+class NoteSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=50)
+    # replace id in foreignKey-field with related name
+    author = serializers.StringRelatedField(many=False)
+
+    # tags = serializers.SlugRelatedField(many=True, read_only=True,
+    #                                    slug_field='name')
+    tags = TagSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Note
+        fields = '__all__'
+
+    def create(self, validated_data):
+        tags_data = validated_data.pop('tags')
+        note = Note.objects.create(**validated_data)
+        for tag in tags_data:
+            Tag.objects.create(note=note, **tags_data)
+        return note
+
+        ______________________
+        def create(self, validated_data):
+        tags_data = validated_data.pop('tags')
+        note = Note.objects.create(**validated_data)
+        for tag in tags_data:
+            Tag.objects.create(note=note, **tags_data)
+        return note 
+
 """

@@ -124,7 +124,6 @@ class ListNotesByTagFilter(generics.GenericAPIView, mixins.ListModelMixin):
     def get_queryset(self):
         user = self.request.user
         notes = user.notes.all()
-        # tag = self.request.data.get('tag') or None
         tag = self.kwargs.get("tag")
         return user.notes.filter(tags__name=tag)
 
@@ -161,23 +160,16 @@ def add_tag_to_note(request: Request, pk):
     note = Note.objects.get(pk=pk)
     user = request.user
     tag_name = request.data.get('tag')
-    if note.author == user:
-        if tag_name is not None and tag_name is not "":
-            try:
-                tag = Tag.objects.get(name=tag_name)
-            except ObjectDoesNotExist:
-                tag = Tag.objects.create(name=tag_name)
-            note.tags.add(tag)
-            note.save()
-            serializer = NoteSerializer(note, many=False)
-            return Response(
-                data=serializer.data,
-                status=status.HTTP_200_OK
-            )
-        else:
-            return Response(data={"message": "Please provide tag name"})
 
-    return Response(data={"message": "You do not have permission to modify this note"}, status=status.HTTP_401_UNAUTHORIZED)
+    if user == note.author:
+        # check if tag exists in note
+        if note.tag_not_exists(tag_name):
+            tag = Tag.objects.create(note=note, name=tag_name)
+            serializer = NoteSerializer(note)
+            return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        return Response(data={"message": "Tag already exists"}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response(data={"message": "You do not have permission to modify this note"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 @api_view(http_method_names=['DELETE'])
@@ -187,19 +179,17 @@ def remove_tag_from_note(request: Request, pk):
     user = request.user
     tag_name = request.data.get('tag')
     if note.author == user:
-        if tag_name is not None:
-            try:
-                tag = Tag.objects.get(name=tag_name)
-            except ObjectDoesNotExist:
-                return Response(data={"message": "This tag is not on note"})
-            note.tags.remove(tag)
-            note.save()
-            serializer = NoteSerializer(note, many=False)
-            return Response(
-                data=serializer.data,
+        tag = Tag.objects.filter(name=tag_name)
+        if tag:
+            tag[0].delete()
+            serializer = NoteSerializer(note)
+            return Response({
+                "message": f"tag {tag_name} deleted successfully",
+                "data": serializer.data
+            },
                 status=status.HTTP_200_OK
             )
         else:
-            return Response(data={"message": "Cannot delete invalid tag"})
-
-    return Response(data={"message": "You do not have permission to modify this note"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(data={"message": "Cannot delete non-existent tag"})
+    else:
+        return Response(data={"message": "You do not have permission to delete this tag"}, status=status.HTTP_401_UNAUTHORIZED)

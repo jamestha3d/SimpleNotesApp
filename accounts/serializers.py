@@ -43,15 +43,3 @@ class CurrentUserNotesSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "username", "email", "notes"]
-
-
-class CurrentUserTagsSerializer(serializers.ModelSerializer):
-    # notes = serializers.StringRelatedField(many=True)
-    notes = serializers.HyperlinkedRelatedField(
-        many=True, view_name="note_detail", queryset=User.objects.all()
-    )
-    # url = serializers.HyperlinkedIdentityField(view_name="current_user")
-
-    class Meta:
-        model = User
-        fields = ["name", "tags"]
