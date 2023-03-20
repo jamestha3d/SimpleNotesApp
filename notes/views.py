@@ -44,12 +44,10 @@ class NoteListCreateView(generics.GenericAPIView, mixins.ListModelMixin, mixins.
         user = self.request.user
         note = serializer.save(author=user)
         tags = self.request.data.get('tags')
-        tag_objects = []
         if tags:
             for tag in tags:
-                tag_objects.append(Tag.objects.create(note=note, name=tag))
-            # for tag_object in tag_objects:
-        #   note.tags.add(tag_object)
+                if note.tag_not_exists(tag):
+                    Tag.objects.create(note=note, name=tag)
 
         return super().perform_create(serializer)
 
