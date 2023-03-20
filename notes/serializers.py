@@ -17,7 +17,7 @@ class NoteSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=50)
     # replace id in foreignKey-field with related name
     author = serializers.StringRelatedField(many=False)
-    tags = serializers.StringRelatedField(many=True)
+    tags = serializers.StringRelatedField(many=True, read_only=True)
     # tags = TagSerializer(many=True, read_only=True)
 
     class Meta:

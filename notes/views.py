@@ -42,7 +42,15 @@ class NoteListCreateView(generics.GenericAPIView, mixins.ListModelMixin, mixins.
     # using mixin perform-hook to attach note to current user
     def perform_create(self, serializer):
         user = self.request.user
-        serializer.save(author=user)
+        note = serializer.save(author=user)
+        tags = self.request.data.get('tags')
+        tag_objects = []
+        if tags:
+            for tag in tags:
+                tag_objects.append(Tag.objects.create(note=note, name=tag))
+            # for tag_object in tag_objects:
+        #   note.tags.add(tag_object)
+
         return super().perform_create(serializer)
 
     @swagger_auto_schema(
