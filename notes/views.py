@@ -118,7 +118,7 @@ class ListNotesByTagFilter(generics.GenericAPIView, mixins.ListModelMixin):
     """Filter note by tag"""
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthor]
 
     # we can accept the tags as part of the request.
     def get_queryset(self):
@@ -139,7 +139,7 @@ class ListSearchNotesByKeyWord(generics.GenericAPIView, mixins.ListModelMixin):
     """Search note by keyword"""
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthor]
 
     def get_queryset(self):
         keyword = self.kwargs.get("keyword")
@@ -152,6 +152,27 @@ class ListSearchNotesByKeyWord(generics.GenericAPIView, mixins.ListModelMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class TagCreateDeleteView(generics.GenericAPIView, mixins.CreateModelMixin, mixins.DestroyModelMixin):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [IsAuthenticated]
+
+    # using mixin perform-hook to attach note to current user
+    def perform_create(self, serializer):
+        user = self.request.user
+        note = Note.objects.get(pk=self.kwargs.get('note_id'))
+        if note:
+            if note.author == user:
+
+                serializer.save(note=note)
+                return super().perform_create(serializer)
+            else:
+                return Response(data={"error": "you do not have"})
+
+    def post(self, request: Request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
 
 
 @api_view(http_method_names=['POST'])

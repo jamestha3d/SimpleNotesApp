@@ -13,5 +13,6 @@ urlpatterns = [
     path("search/<keyword>", views.ListSearchNotesByKeyWord.as_view(),
          name="search_keyword"),
     path("add_tag/<int:pk>/", views.add_tag_to_note, name="add_tag"),
-    path("remove_tag/<int:pk>/", views.remove_tag_from_note, name="remove_tag")
+    path("remove_tag/<int:pk>/", views.remove_tag_from_note, name="remove_tag"),
+    path("tags/<note_id>", views.TagCreateDeleteView.as_view(), name="tags")
 ]
