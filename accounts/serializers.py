@@ -3,6 +3,7 @@ from rest_framework.validators import ValidationError
 from rest_framework import serializers
 from .models import User
 from rest_framework.authtoken.models import Token
+from notes.serializers import NoteSerializer
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -35,11 +36,17 @@ class SignUpSerializer(serializers.ModelSerializer):
 
 class CurrentUserNotesSerializer(serializers.ModelSerializer):
     # notes = serializers.StringRelatedField(many=True)
-    notes = serializers.HyperlinkedRelatedField(
+    """ notes = serializers.HyperlinkedRelatedField(
         many=True, view_name="note_detail", queryset=User.objects.all()
-    )
+    ) """
     # url = serializers.HyperlinkedIdentityField(view_name="current_user")
+
+    has_public = serializers.SerializerMethodField()
+    notes = NoteSerializer(many=True)
+
+    def get_has_public(self, object):
+        return any(note.public for note in object.notes.all())
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "notes"]
+        fields = ["id", "username", "email", "notes", "has_public"]

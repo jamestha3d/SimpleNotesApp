@@ -187,4 +187,17 @@ class NoteSerializer(serializers.ModelSerializer):
             Tag.objects.create(note=note, **tags_data)
         return note 
 
+
+
+
+
+
+        def create(self, request):
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 """

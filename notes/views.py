@@ -11,6 +11,7 @@ from .permissions import ReadOnly, AuthorOrReadOnly, IsAuthor, AuthorOrPublic
 from django.core.exceptions import ObjectDoesNotExist
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.validators import ValidationError
+from rest_framework.viewsets import ModelViewSet
 
 # from rest_framework import viewsets
 
@@ -220,3 +221,28 @@ def remove_tag_from_note(request: Request, pk):
             return Response(data={"message": "Cannot delete non-existent tag"})
     else:
         return Response(data={"message": "You do not have permission to delete this tag"}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+# alternative implementation using modelviewset
+class NoteViewSet(ModelViewSet):
+    serializer_class = NoteSerializer
+    permission_classes = []
+    queryset = Note.objects.all()
+
+    def get_queryset(self):
+        queryset = Note.objects.all()
+        username = self.request.query_params.get("username") or None
+        if username is not None:
+            return Note.objects.filter(author__username=username)
+        return queryset
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        note = serializer.save(author=user)
+        tags = self.request.data.get('tags')
+        if tags:
+            for tag in tags:
+                if note.tag_not_exists(tag):
+                    Tag.objects.create(note=note, name=tag)
+
+        return super().perform_create(serializer)
