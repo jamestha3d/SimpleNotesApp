@@ -25,7 +25,6 @@ class SignUpSerializer(serializers.ModelSerializer):
     # overwrite the create method with custom method to hide password chars in admin view
     def create(self, validated_data):
         password = validated_data.pop("password")
-
         user = super().create(validated_data)
         # actually update and hash password
         user.set_password(password)

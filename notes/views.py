@@ -12,6 +12,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.validators import ValidationError
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.decorators import api_view, action, permission_classes
 
 # from rest_framework import viewsets
 
@@ -246,3 +247,15 @@ class NoteViewSet(ModelViewSet):
                     Tag.objects.create(note=note, name=tag)
 
         return super().perform_create(serializer)
+
+    @action(
+        detail=True,
+        methods=['GET', 'POST'],
+        permission_classes=(AllowAny,),
+        url_path=r'taglist/(?P<title_id>[^/.]+)'
+        )
+    def tags(self, request, pk=None, title_id=None):
+        note = Note.objects.get(pk=pk)
+        tags = note.tags.all()
+        print("got here")
+        return Response(data=TagSerializer(tags, many=True).data)

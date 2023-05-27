@@ -1,10 +1,26 @@
 
 from django.db import models
 from django.contrib.auth import get_user_model
+from safedelete.models import SafeDeleteModel
+from safedelete.managers import SafeDeleteManager
+from safedelete import DELETED_VISIBLE_BY_PK
+from django.utils.timezone import now
 # Create your models here.
 
 User = get_user_model()
+class SafeDeleteModel(SafeDeleteModel):
+    is_deleted = models.BooleanField(default=False)
+    deleted_by = models.CharField(max_length=255, null=True, default='')
+    deleted_at = models.DateTimeField(null=True, default=None)
 
+    def delete(self):
+        self.is_deleted = True
+        self.deleted_at = now()
+        return super().delete()
+
+class MyModelManager(SafeDeleteManager):
+    #modify manager for soft delete model
+    _safedelete_visibility = DELETED_VISIBLE_BY_PK
 
 class Tag(models.Model):
     name = models.CharField(max_length=20)
@@ -28,6 +44,20 @@ class Note(models.Model):
 
     def tag_not_exists(self, tag_name) -> bool:
         return tag_name not in [tag.name for tag in self.tags.all()]
+
+    class Meta:
+        ordering = ["-created"]
+
+class Post(SafeDeleteModel):
+    author = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, related_name="posts")
+    title = models.CharField(max_length=40)
+    body = models.TextField(blank=True, null=True, default='')
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(default=now)
+    objects = MyModelManager()
+
+    def __str__(self) -> str:
+        return self.title
 
     class Meta:
         ordering = ["-created"]

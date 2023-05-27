@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     # third-party apps
     'rest_framework',
     'rest_framework.authtoken',
-    'drf_yasg'
+    'drf_yasg',
+    'safedelete'
 ]
 
 AUTH_USER_MODEL = "accounts.User"

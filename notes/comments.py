@@ -200,4 +200,14 @@ class NoteSerializer(serializers.ModelSerializer):
             else:
                 return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+#Model View set extra url parameters 
+@action(
+        detail=True, 
+        methods=['get'], 
+        url_path=r'password-reset/(?P<uid64>\w+)/(?P<token>\w+)', 
+        url_name='password-reset-confirm'
+    )
+    def password_reset(self, request, pk, uid64, token):
+        pass
+
 """
