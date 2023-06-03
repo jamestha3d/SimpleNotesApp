@@ -1,12 +1,14 @@
 from rest_framework import serializers
 from .models import Tag, Note
 from rest_framework.validators import ValidationError
+from rest_framework.request import Request
 
 
 class TagSerializer(serializers.ModelSerializer):
     # replace related string field with id
     name = serializers.CharField(max_length=20)
-    # note = serializers.StringRelatedField(many=False)
+    note = serializers.StringRelatedField(many=False)
+    
 
     class Meta:
         model = Tag

@@ -13,7 +13,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.validators import ValidationError
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import api_view, action, permission_classes
-
+import json
 # from rest_framework import viewsets
 
 
@@ -251,11 +251,27 @@ class NoteViewSet(ModelViewSet):
     @action(
         detail=True,
         methods=['GET', 'POST'],
-        permission_classes=(AllowAny,),
-        url_path=r'taglist/(?P<title_id>[^/.]+)'
+        permission_classes=(AllowAny,)
         )
-    def tags(self, request, pk=None, title_id=None):
+    def tags(self, request, pk=None):
         note = Note.objects.get(pk=pk)
         tags = note.tags.all()
         print("got here")
         return Response(data=TagSerializer(tags, many=True).data)
+
+    @action(
+        detail=True,
+        methods=['GET', 'POST'],
+        permission_classes=(AllowAny,),
+        url_path="tags/(?P<tag_name>[^/.]+)"
+        )
+    def tag_detail(self, request, pk=None, tag_name=None):
+        #redirect view request if no tag_id
+        if not tag_name:
+            return self.tags(request, pk)
+        notes = Note.objects.get(pk=pk)
+        if tag := notes.tags.filter(name=tag_name).first():
+            return Response(data=TagSerializer(tag).data)
+        else:
+            return Response({"error": f"No Tags named '{tag_name}' on Note with id '{pk}' "} )
+        
