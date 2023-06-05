@@ -31,7 +31,7 @@ class Tag(models.Model):
         return self.name
 
 
-class Note(models.Model):
+class NoteModel(models.Model):
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, blank=True, related_name="notes")
     title = models.CharField(max_length=40)
@@ -61,3 +61,25 @@ class Post(SafeDeleteModel):
 
     class Meta:
         ordering = ["-created"]
+
+
+class BlogModel(models.Model):
+    author = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, related_name="blogs")
+    title = models.CharField(max_length=40)
+    body = models.TextField(blank=True, null=True, default='')
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(default=now)
+
+    def __str__(self) -> str:
+        return self.title
+
+    class Meta:
+        ordering = ["-created"]
+
+class Blog(BlogModel):
+    """Add Model Logic Here"""
+    pass
+
+class Note(NoteModel):
+    """Add Note Logic Here"""
+    pass
