@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'notes',
     'accounts',
+    'stripe_payment',
 
     # third-party apps
     'rest_framework',

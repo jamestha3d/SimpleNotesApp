@@ -177,7 +177,7 @@ class TagCreateDeleteView(generics.GenericAPIView, mixins.CreateModelMixin, mixi
                 serializer.save(note=note)
                 return super().perform_create(serializer)
             else:
-                return Response(data={"error": "you do not have"})
+                return Response(data={"error": "you do not have the right permission to perform this action"})
 
     def post(self, request: Request, *args, **kwargs):
         return self.create(request, *args, **kwargs)

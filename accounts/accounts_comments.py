@@ -1,6 +1,6 @@
 #Test file
 
-
+from django.db.models import Q, Count, OuterRef, Exists
 """
 active_users = Usr.objects.annotate(has_subscription=Exists(Subscription.objects.filter(userguid=OuterRef('pk')))).filter(has_subscription=True,assessments__summarydatetime__gt=date_threshold).distinct().values('guid', 'username', 'email')
 
