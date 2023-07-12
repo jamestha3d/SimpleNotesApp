@@ -4,12 +4,13 @@ from django.urls import path, include, re_path
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-from notes.views import NoteViewSet
+from notes.views import NoteViewSet, PaymentMethodView
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 
 router.register("", NoteViewSet, basename="notes")
+router.register("payments", PaymentMethodView, basename="payments")
 schema_view = get_schema_view(
     openapi.Info(
         title="Notes API",
@@ -34,5 +35,4 @@ urlpatterns = [
     path("auth/", include("accounts.urls")),
     path("payment/", include("stripe_payment.urls")),
     path("notez/", include(router.urls)),
-    
 ]

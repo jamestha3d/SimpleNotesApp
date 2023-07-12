@@ -5,6 +5,8 @@ from safedelete.models import SafeDeleteModel
 from safedelete.managers import SafeDeleteManager
 from safedelete import DELETED_VISIBLE_BY_PK
 from django.utils.timezone import now
+import uuid
+from django.db import transaction
 # Create your models here.
 
 User = get_user_model()
@@ -83,3 +85,17 @@ class Blog(BlogModel):
 class Note(NoteModel):
     """Add Note Logic Here"""
     pass
+
+class PaymentMethod(models.Model):
+    guid = models.UUIDField(db_column='GUID', primary_key=True, max_length=36, default=uuid.uuid4)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, related_name="payment_method")
+    default = models.BooleanField(default=True)
+    payment_id = models.CharField(max_length=100, blank=False, null=True, default=None)
+    payment_json = models.TextField(blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if not self.default:
+            return super().save(*args, **kwargs)
+        with transaction.atomic():
+            PaymentMethod.objects.filter(user=self.user, default=True).update(default=False)
+            return super().save(*args, **kwargs)

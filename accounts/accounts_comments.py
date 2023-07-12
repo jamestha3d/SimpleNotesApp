@@ -8,3 +8,5 @@ active_users = Usr.objects.annotate(subscriptions_count=Count('subscriptions')).
 
 Same query implemented differently
 """
+
+#request = request._request

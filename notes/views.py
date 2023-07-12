@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly, IsAdminUser
 from rest_framework import status, generics, mixins
 from rest_framework.decorators import api_view, APIView, permission_classes
-from .models import Note, Tag
-from .serializers import NoteSerializer, TagSerializer
+from .models import Note, Tag, PaymentMethod
+from .serializers import NoteSerializer, TagSerializer, PaymentMethodSerializer
 from django.shortcuts import get_object_or_404
 from accounts.serializers import CurrentUserNotesSerializer
 from .permissions import ReadOnly, AuthorOrReadOnly, IsAuthor, AuthorOrPublic
@@ -14,6 +14,9 @@ from rest_framework.validators import ValidationError
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import api_view, action, permission_classes
 import json
+import stripe
+import os
+from simplenote import settings
 # from rest_framework import viewsets
 
 
@@ -275,3 +278,61 @@ class NoteViewSet(ModelViewSet):
         else:
             return Response({"error": f"No Tags named '{tag_name}' on Note with id '{pk}' "} )
         
+    
+class PaymentMethodView(ModelViewSet):
+    serializer_class = PaymentMethodSerializer
+    permission_classes = []
+    queryset = PaymentMethod.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Repsonse(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_create(self, serializer):
+        serializer.save()
+
+    def list(self, request):
+        #return Response(self.serializer_class(self.queryset, many=True).data)
+        #return Response(PaymentMethodSerializer(PaymentMethod.objects.all(), many=True).data)
+        pass
+
+    @action(
+        detail=False,
+        methods=['GET', 'POST'],
+        permission_classes=(AllowAny,)
+        )
+    def somemethod(self, request):
+        if request.method == 'GET':
+            return Response(PaymentMethodSerializer(PaymentMethod.objects.all(), many=True).data)
+        elif request.method == 'POST':
+            stripe.api_key = settings.STRIPE_API_KEY
+            pm = stripe.PaymentMethod.create(
+                type="card",
+                card={
+                    "number": "4242424242424242",
+                    "exp_month": 8,
+                    "exp_year": 2029,
+                    "cvc": "314",
+                },
+                )
+            data = request.data
+            user = request.user
+            pm = PaymentMethod.objects.create(user=user, payment_json=json.dumps(pm["card"]))
+            return Response(PaymentMethodSerializer(pm).data)
+            #return Response(f"{api_key}")
+            #for attr, val in request.__dict__.items():
+                #data[attr] = "val"
+            #user = User.objects.filter(username="user3").first()
+            #user=request.user
+            #data["user"] = request.user
+            # serializer = PaymentMethodSerializer(data=data)
+            # if serializer.is_valid():
+            #     serializer.save()
+            #     return Response(serializer.data)
+            # else:
+            #     return Response(f"user is {user}")
+            #     #return Response(serializer.errors)
+            #return Response(data)
