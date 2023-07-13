@@ -304,7 +304,7 @@ class PaymentMethodView(ModelViewSet):
         methods=['GET', 'POST'],
         permission_classes=(AllowAny,)
         )
-    def somemethod(self, request):
+    def payments(self, request):
         if request.method == 'GET':
             return Response(PaymentMethodSerializer(PaymentMethod.objects.all(), many=True).data)
         elif request.method == 'POST':
@@ -322,17 +322,5 @@ class PaymentMethodView(ModelViewSet):
             user = request.user
             pm = PaymentMethod.objects.create(user=user, payment_json=json.dumps(pm["card"]))
             return Response(PaymentMethodSerializer(pm).data)
-            #return Response(f"{api_key}")
-            #for attr, val in request.__dict__.items():
-                #data[attr] = "val"
-            #user = User.objects.filter(username="user3").first()
-            #user=request.user
-            #data["user"] = request.user
-            # serializer = PaymentMethodSerializer(data=data)
-            # if serializer.is_valid():
-            #     serializer.save()
-            #     return Response(serializer.data)
-            # else:
-            #     return Response(f"user is {user}")
-            #     #return Response(serializer.errors)
-            #return Response(data)
+            
+    

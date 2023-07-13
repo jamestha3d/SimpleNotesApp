@@ -33,6 +33,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("notes/", include("notes.urls")),
     path("auth/", include("accounts.urls")),
-    path("payment/", include("stripe_payment.urls")),
+    path("stripe/", include("stripe_payment.urls")),
     path("notez/", include(router.urls)),
 ]
