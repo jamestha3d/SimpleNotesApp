@@ -113,9 +113,16 @@ def get_notes_for_current_user(request: Request):
 
 class ListNotesForAdmin(generics.GenericAPIView, mixins.ListModelMixin):
     """Admin can see all notes"""
-    queryset = Note.objects.all()
+    #queryset = Note.objects.all()
+    #permission_classes = [IsAdminUser]
+
+    #list note for admins is now flexible and can be accessed by none admins but will only see their notes
+    def get_queryset(self, *args, **kwargs):
+        queryset = Note.objects.all() if self.request.user.is_superuser else Note.objects.filter(author=self.request.user)
+        return queryset
+
     serializer_class = NoteSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
         operation_summary="List all notes for admin",
