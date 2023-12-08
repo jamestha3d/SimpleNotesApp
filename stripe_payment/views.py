@@ -61,7 +61,7 @@ class PaymentView(ModelViewSet):
             data = request.data
             user = request.user
             payment = PaymentMethod.objects.create(user=user, payment_json=json.dumps(pm["card"]), payment_id=pm["id"])
-            return Response(PaymentMethodSerializer(payment).data)
+            return Response(PaymentMethodSerializer(payment).data, status=status.HTT)
     
     @action(
         detail=False,
