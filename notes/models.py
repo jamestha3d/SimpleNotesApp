@@ -138,7 +138,7 @@ class VersionedModelMixin(models.Model):
     object_id = models.CharField(max_length=255)
     content_object = GenericForeignKey('content_type', 'object_id')
     version_number = models.PositiveIntegerField()
-    comments = models.TextField()
+    comments = models.TextField(null=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE)
     fields_json = models.JSONField(encoder=DjangoJSONEncoder)
     created = models.DateTimeField(auto_now_add=True)
@@ -164,7 +164,7 @@ class VersionedModelMixin(models.Model):
     @classmethod
     def create_version(cls, instance, creator, version_number=None, comments=None):
         if not instance:
-            return #raise Exception
+            return None #raise Exception
         #TODO make creator request.user
         fields_json = cls.serialize_json_fields(cls, instance)
         if not version_number:
@@ -240,7 +240,7 @@ class VersionedModelMixin(models.Model):
     
     @property
     def _model(self):
-        return self._content_type.model_class()
+        return self.content_type.model_class()
     
     @property
     def _content_type(self):
@@ -286,4 +286,7 @@ class Usr(GUIDModel):
 
 
 class NotesVersion(VersionedModelMixin):
+    pass
+
+class Something:
     pass
